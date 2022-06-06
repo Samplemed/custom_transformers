@@ -10,7 +10,7 @@ setuptools.setup(
     author_email="leonardo.pedreira@samplemed.com.br",
     description="Custom Transformers",
     long_description=long_description,
-    url="https://github.com/Samplemed/preditivo_vida",
+    url="https://github.com/Samplemed/custom_transformers",
     packages=setuptools.find_packages(),
     install_requires = ['scikit-learn>=1.0.2'],
     classifiers=[
