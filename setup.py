@@ -12,6 +12,7 @@ setuptools.setup(
     long_description=long_description,
     url="https://github.com/Samplemed/preditivo_vida",
     packages=setuptools.find_packages(),
+    install_requires = ['scikit-learn>=1.0.2'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
