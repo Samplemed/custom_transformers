@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="custom_transformer",
+    name="custom_transformers",
     version="0.0.1",
     author="Leonardo Uchôa Pedreira",
     author_email="leonardo.pedreira@samplemed.com.br",
