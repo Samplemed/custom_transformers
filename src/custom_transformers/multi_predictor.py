@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pandas import DataFrame
+from pandas import DataFrame, merge
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.pipeline import Pipeline
 
@@ -61,18 +61,16 @@ class JoinTransformer(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         *,
-        key: str,
+        on: str,
         other_df: DataFrame,
-        how: Literal["inner", "left", "right", "outer", "cross"],
-        lsuffix: str = "__left",
-        rsuffix: str = "__right",
+        how: Literal["inner", "left", "right"],
+        drop_key: bool = True
     ):
         """todo"""
-        self.key = key
+        self.on = on
         self.other_df = other_df
         self.how = how
-        self.lsuffix = lsuffix
-        self.rsuffix = rsuffix
+        self.drop_key = drop_key
 
     def fit(self, x, y=None):
         return self
@@ -81,9 +79,12 @@ class JoinTransformer(BaseEstimator, TransformerMixin):
         self._assert_df(x)
         self._assert_df(self.other_df)
 
-        return x.join(
-            self.other_df, on=self.key, how=self.how, lsuffix=self.lsuffix
-        )
+        if self.drop_key:
+            return merge(x, self.other_df, how=self.how, on=self.on).drop(
+                columns=[self.on]
+            )
+        else:
+            return merge(x, self.other_df, how=self.how, on=self.on)
 
         # return self.transform_func(x) if callable(self.transform_func) else x
 
