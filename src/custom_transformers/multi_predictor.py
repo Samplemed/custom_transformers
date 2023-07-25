@@ -1,4 +1,7 @@
-from sklearn.base import BaseEstimator, ClassifierMixin
+from typing import Literal
+
+from pandas import DataFrame
+from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.pipeline import Pipeline
 
 
@@ -27,7 +30,10 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
         predictions_dict = {}
         for client_coverage in self.vars_and_pipe_dict:
             predictions_dict[client_coverage] = (
-                self.vars_and_pipe_dict[client_coverage].predict(X).ravel().tolist()
+                self.vars_and_pipe_dict[client_coverage]
+                .predict(X)
+                .ravel()
+                .tolist()
             )
 
         return predictions_dict
@@ -47,6 +53,55 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
             )
 
         return predictions_dict
+
+
+class JoinTransformer(BaseEstimator, TransformerMixin):
+    """Apply given transformation."""
+
+    def __init__(
+        self,
+        *,
+        key: str,
+        other_df: DataFrame,
+        how: Literal["inner", "left", "right", "outer", "cross"],
+        lsuffix: str = "__left",
+        rsuffix: str = "__right",
+    ):
+        """todo"""
+        self.key = key
+        self.other_df = other_df
+        self.how = how
+        self.lsuffix = lsuffix
+        self.rsuffix = rsuffix
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, x: DataFrame):
+        self._assert_df(x)
+        self._assert_df(self.other_df)
+
+        return x.join(
+            self.other_df, on=self.key, how=self.how, lsuffix=self.lsuffix
+        )
+
+        # return self.transform_func(x) if callable(self.transform_func) else x
+
+    def _health_checks(self, df) -> None:
+        """todo"""
+        self._assert_df(df)
+        self._check_feature_names(df)
+
+    def _assert_df(self, df) -> None:
+        """todo"""
+        assert isinstance(df, DataFrame)
+
+    def _check_key_inside_cols(self, df) -> None:
+        """todo"""
+        assert self.key in df.cols
+
+    def get_feature_names(self):
+        return self.cols
 
 
 if __name__ == "__main__":
