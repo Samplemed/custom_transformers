@@ -22,6 +22,9 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
     ):
         self.vars_and_pipe_dict = vars_and_pipe_dict
 
+    def fit(self, x, y=None):
+        return self
+
     def predict(self, X) -> dict[str, list[int]]:
         """
         predicts
