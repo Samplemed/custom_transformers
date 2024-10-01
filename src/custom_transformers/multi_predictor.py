@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pandas import DataFrame, merge
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
@@ -33,27 +33,29 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
         predictions_dict = {}
         for client_coverage in self.vars_and_pipe_dict:
             predictions_dict[client_coverage] = (
-                self.vars_and_pipe_dict[client_coverage]
-                .predict(X)
-                .ravel()
-                .tolist()
+                self.vars_and_pipe_dict[client_coverage].predict(X).ravel().tolist()
             )
 
         return predictions_dict
 
-    def predict_proba(self, X) -> dict[str, list[float]]:
+    def predict_proba(
+        self, X, return_all_classes: Optional[bool] = False
+    ) -> dict[str, list[float]]:
         """
         predicts proba
-        """
 
+        Args:
+
+            - return_all_classes: mostly usefull for binary classification,
+            if false returns the class in index 0.
+        """
         predictions_dict = {}
         for client_coverage in self.vars_and_pipe_dict:
-            predictions_dict[client_coverage] = (
-                self.vars_and_pipe_dict[client_coverage]
-                .predict_proba(X)
-                .ravel()
-                .tolist()
-            )
+            probas = self.vars_and_pipe_dict[client_coverage].predict_proba(X)
+            if not return_all_classes:
+                predictions_dict[client_coverage] = probas[:, 0].ravel().tolist()
+            else:
+                predictions_dict[client_coverage] = probas.ravel().tolist()
 
         return predictions_dict
 
@@ -67,7 +69,7 @@ class JoinTransformer(BaseEstimator, TransformerMixin):
         on: str,
         other_df: DataFrame,
         how: Literal["inner", "left", "right"],
-        drop_key: bool = True
+        drop_key: bool = True,
     ):
         """todo"""
         self.on = on
@@ -128,4 +130,23 @@ if __name__ == "__main__":
         }
     )
 
-    print(multi_predictor.predict_proba(X))
+    single_row = X[[100]]
+
+    print(
+        f"""
+        Probability prediction for principal class:
+        { multi_predictor.predict_proba(single_row) }
+        """
+    )
+    print(
+        f"""
+        Probability prediction for all classes:
+        {multi_predictor.predict_proba(single_row, return_all_classes=True)}
+        """
+    )
+    print(
+        f"""
+        Class predictions:
+        {multi_predictor.predict(single_row)}
+        """
+    )
