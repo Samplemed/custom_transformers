@@ -39,7 +39,7 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
         return predictions_dict
 
     def predict_proba(
-        self, X, return_all_classes: Optional[bool] = False
+        self, X, return_classes_idx: Optional[int] = None
     ) -> dict[str, list[float]]:
         """
         predicts proba
@@ -49,11 +49,20 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
             - return_all_classes: mostly usefull for binary classification,
             if false returns the class in index 0.
         """
+
+        assert (
+            return_classes_idx == 0
+            or return_classes_idx == 1
+            or return_classes_idx is None
+        ), f"`return_classes_idx` should either 0, 1 or None, not {return_classes_idx}"
+
         predictions_dict = {}
         for client_coverage in self.vars_and_pipe_dict:
             probas = self.vars_and_pipe_dict[client_coverage].predict_proba(X)
-            if not return_all_classes:
+            if return_classes_idx == 0:
                 predictions_dict[client_coverage] = probas[:, 0].ravel().tolist()
+            elif return_classes_idx == 1:
+                predictions_dict[client_coverage] = probas[:, 1].ravel().tolist()
             else:
                 predictions_dict[client_coverage] = probas.ravel().tolist()
 
@@ -130,18 +139,24 @@ if __name__ == "__main__":
         }
     )
 
-    single_row = X[[100]]
+    single_row = X[[50]]
 
     print(
         f"""
-        Probability prediction for principal class:
+        Probability prediction for all classes:
         { multi_predictor.predict_proba(single_row) }
         """
     )
     print(
         f"""
-        Probability prediction for all classes:
-        {multi_predictor.predict_proba(single_row, return_all_classes=True)}
+        Probability prediction for 0 class:
+        {multi_predictor.predict_proba(single_row, return_classes_idx=0)}
+        """
+    )
+    print(
+        f"""
+        Probability prediction for 1 class:
+        {multi_predictor.predict_proba(single_row, return_classes_idx=1)}
         """
     )
     print(
