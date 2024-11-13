@@ -58,10 +58,13 @@ class YMDExtractor(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         columns: list[str],
-        ymd_to_extract: tuple[Literal["year"], Literal["month"], Literal["day"]] = (
+        ymd_to_extract: tuple[
+            Literal["year"], Literal["month"], Literal["day"], Literal["weekday"]
+        ] = (
             "year",
             "month",
             "day",
+            "weekday",
         ),
         drop_original_cols: bool = False,
     ):
@@ -97,6 +100,10 @@ class YMDExtractor(BaseEstimator, TransformerMixin):
             for col in self.columns:
                 X_copy[f"{col}_day"] = pd.to_datetime(X_copy[col])
                 X_copy[f"{col}_day"] = X_copy[f"{col}_day"].dt.day
+        if "weekday" in self.ymd_to_extract:
+            for col in self.columns:
+                X_copy[f"{col}_weekday"] = pd.to_datetime(X_copy[col])
+                X_copy[f"{col}_weekday"] = X_copy[f"{col}_weekday"].dt.weekday
 
         if self.drop_original_cols:
             X_copy.drop(col, axis=1, inplace=True)
@@ -139,7 +146,7 @@ class AgeExtractor(BaseEstimator, TransformerMixin):
         """
         transform
         """
-        print(self.base_year)
+
         X_copy = X.copy()
         X_copy["age"] = pd.to_datetime(X_copy[self.birthdate_column])
         X_copy["age"] = self.base_year - X_copy["age"].dt.year
