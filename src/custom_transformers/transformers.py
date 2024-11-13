@@ -2,6 +2,8 @@
 Custom scikit-learn transformers.
 """
 
+from datetime import datetime
+
 import pandas as pd
 
 # from pandas import DataFrame
@@ -85,6 +87,49 @@ class YearExtractor(BaseEstimator, TransformerMixin):
         return X_copy
 
 
+class AgeExtractor(BaseEstimator, TransformerMixin):
+    """
+    Custom scikit-learn transformer for calculating the age of someone.
+    Inputs:
+        - `birthdate_column`: name of the birthdate column in the dataframe
+        - `base_year`: the year to be considered. If set to `None`, current year will be used.
+
+    Outputs:
+        A copy of the dataframe with an extra column, named `age`.
+
+    NOTE: a copy of the dataframe will be made!
+    """
+
+    def __init__(
+        self,
+        birthdate_column: str,
+        base_year: int | None = None,
+    ):
+        self.birthdate_column = birthdate_column
+        self.base_year = base_year if base_year is not None else datetime.now().year
+
+    def fit(self, X: pd.DataFrame, y=None):
+        """
+        fit
+        """
+        return self
+
+    def transform(
+        self,
+        X: pd.DataFrame,
+        y=None,
+    ) -> pd.DataFrame:
+        """
+        transform
+        """
+        print(self.base_year)
+        X_copy = X.copy()
+        X_copy["age"] = pd.to_datetime(X_copy[self.birthdate_column])
+        X_copy["age"] = self.base_year - X_copy["age"].dt.year
+
+        return X_copy
+
+
 if __name__ == "__main__":
     import pandas as pd
 
@@ -121,11 +166,17 @@ if __name__ == "__main__":
         [
             (
                 "year_extractor",
-                YearExtractor(columns=["birthday"], drop_original_cols=True),
+                YearExtractor(columns=["birthday"], drop_original_cols=False),
+            ),
+            (
+                "age_extractor",
+                AgeExtractor(
+                    birthdate_column="birthday",
+                ),
             ),
             (
                 "feature_selector",
-                FeatureSelector(columns=["salary", "weight", "birthday_year"]),
+                FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
             ),
             # ("scaler", StandardScaler()),
             # ("classifier", RandomForestClassifier()),  # Classifier
