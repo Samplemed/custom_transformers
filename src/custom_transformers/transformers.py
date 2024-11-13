@@ -45,13 +45,16 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         return X[self.columns]
 
 
+# TODO: optimize this to avoid copying, etc
 class YearExtractor(BaseEstimator, TransformerMixin):
     """
-    Custom scikit-learn transformer for selecting columns in specified order
+    Custom scikit-learn transformer for selecting columns in specified order.
+    NOTE: a copy of the dataframe will be made!
     """
 
-    def __init__(self, columns: list[str]):
+    def __init__(self, columns: list[str], drop_original_cols: bool = False):
         self.columns = columns
+        self.drop_original_cols = drop_original_cols
 
     def fit(self, X: pd.DataFrame, y=None):
         """
@@ -68,16 +71,24 @@ class YearExtractor(BaseEstimator, TransformerMixin):
         transform
         """
         # yeah the ideal is to optimally copy the df
-        for col in self.columns:
-            X[f"{col}_year"] = pd.to_datetime(X[col])
-            X[f"{col}_year"] = X[f"{col}_year"].dt.year
+        X_copy = X.copy()
+        if self.drop_original_cols:
+            for col in self.columns:
+                X_copy[f"{col}_year"] = pd.to_datetime(X_copy[col])
+                X_copy[f"{col}_year"] = X_copy[f"{col}_year"].dt.year
+                X_copy.drop(col, axis=1, inplace=True)
+        else:
+            for col in self.columns:
+                X_copy[f"{col}_year"] = pd.to_datetime(X_copy[col])
+                X_copy[f"{col}_year"] = X_copy[f"{col}_year"].dt.year
 
-        return X
+        return X_copy
 
 
 if __name__ == "__main__":
     import pandas as pd
-    from sklearn.ensemble import RandomForestClassifier
+
+    # from sklearn.ensemble import RandomForestClassifier
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
 
@@ -108,16 +119,21 @@ if __name__ == "__main__":
 
     pipeline = Pipeline(
         [
-            ("year_extractor", YearExtractor(columns=["birthday"])),
+            (
+                "year_extractor",
+                YearExtractor(columns=["birthday"], drop_original_cols=True),
+            ),
             (
                 "feature_selector",
                 FeatureSelector(columns=["salary", "weight", "birthday_year"]),
             ),
-            ("scaler", StandardScaler()),
+            # ("scaler", StandardScaler()),
             # ("classifier", RandomForestClassifier()),  # Classifier
         ]
     )
     print(pipeline.fit_transform(X_train))
+
+    print(X_train)
 
     # pipeline.fit(X_train, y_train)
     #
