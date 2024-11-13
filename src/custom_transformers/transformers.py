@@ -3,6 +3,7 @@ Custom scikit-learn transformers.
 """
 
 from datetime import datetime
+from typing import Literal
 
 import pandas as pd
 
@@ -48,14 +49,24 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
 
 
 # TODO: optimize this to avoid copying, etc
-class YearExtractor(BaseEstimator, TransformerMixin):
+class YMDExtractor(BaseEstimator, TransformerMixin):
     """
     Custom scikit-learn transformer for selecting columns in specified order.
     NOTE: a copy of the dataframe will be made!
     """
 
-    def __init__(self, columns: list[str], drop_original_cols: bool = False):
+    def __init__(
+        self,
+        columns: list[str],
+        ymd_to_extract: tuple[Literal["year"], Literal["month"], Literal["day"]] = (
+            "year",
+            "month",
+            "day",
+        ),
+        drop_original_cols: bool = False,
+    ):
         self.columns = columns
+        self.ymd_to_extract = ymd_to_extract
         self.drop_original_cols = drop_original_cols
 
     def fit(self, X: pd.DataFrame, y=None):
@@ -74,15 +85,21 @@ class YearExtractor(BaseEstimator, TransformerMixin):
         """
         # yeah the ideal is to optimally copy the df
         X_copy = X.copy()
+        if "year" in self.ymd_to_extract:
+            for col in self.columns:
+                X_copy[f"{col}_year"] = pd.to_datetime(X_copy[col])
+                X_copy[f"{col}_year"] = X_copy[f"{col}_year"].dt.year
+        if "month" in self.ymd_to_extract:
+            for col in self.columns:
+                X_copy[f"{col}_month"] = pd.to_datetime(X_copy[col])
+                X_copy[f"{col}_month"] = X_copy[f"{col}_month"].dt.month
+        if "day" in self.ymd_to_extract:
+            for col in self.columns:
+                X_copy[f"{col}_day"] = pd.to_datetime(X_copy[col])
+                X_copy[f"{col}_day"] = X_copy[f"{col}_day"].dt.day
+
         if self.drop_original_cols:
-            for col in self.columns:
-                X_copy[f"{col}_year"] = pd.to_datetime(X_copy[col])
-                X_copy[f"{col}_year"] = X_copy[f"{col}_year"].dt.year
-                X_copy.drop(col, axis=1, inplace=True)
-        else:
-            for col in self.columns:
-                X_copy[f"{col}_year"] = pd.to_datetime(X_copy[col])
-                X_copy[f"{col}_year"] = X_copy[f"{col}_year"].dt.year
+            X_copy.drop(col, axis=1, inplace=True)
 
         return X_copy
 
@@ -135,7 +152,8 @@ if __name__ == "__main__":
 
     # from sklearn.ensemble import RandomForestClassifier
     from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
+
+    # from sklearn.preprocessing import StandardScaler
 
     data = {
         "birthday": [
@@ -166,7 +184,11 @@ if __name__ == "__main__":
         [
             (
                 "year_extractor",
-                YearExtractor(columns=["birthday"], drop_original_cols=False),
+                YMDExtractor(
+                    columns=["birthday"],
+                    drop_original_cols=False,
+                    # ymd_to_extract=("month", "day", "year"),
+                ),
             ),
             (
                 "age_extractor",
@@ -174,10 +196,10 @@ if __name__ == "__main__":
                     birthdate_column="birthday",
                 ),
             ),
-            (
-                "feature_selector",
-                FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
-            ),
+            # (
+            #     "feature_selector",
+            #     FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
+            # ),
             # ("scaler", StandardScaler()),
             # ("classifier", RandomForestClassifier()),  # Classifier
         ]
