@@ -20,5 +20,5 @@ setuptools.setup(
     package_dir={"": "src"},
     install_requires=["scikit-learn>=1.0.2", "pandas>=2.0.0"],
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.6",
+    python_requires=">=3.10",
 )
