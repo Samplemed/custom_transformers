@@ -3,7 +3,7 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+_ = setuptools.setup(
     name="custom_transformers",
     version="1.0.0",
     author="Leonardo Uchôa Pedreira",

@@ -156,11 +156,8 @@ class AgeExtractor(BaseEstimator, TransformerMixin):
 
 if __name__ == "__main__":
     import pandas as pd
-
-    # from sklearn.ensemble import RandomForestClassifier
+    from sklearn.ensemble import RandomForestClassifier
     from sklearn.pipeline import Pipeline
-
-    # from sklearn.preprocessing import StandardScaler
 
     data = {
         "birthday": [
@@ -203,19 +200,18 @@ if __name__ == "__main__":
                     birthdate_column="birthday",
                 ),
             ),
-            # (
-            #     "feature_selector",
-            #     FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
-            # ),
-            # ("scaler", StandardScaler()),
-            # ("classifier", RandomForestClassifier()),  # Classifier
+            (
+                "feature_selector",
+                FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
+            ),
+            ("classifier", RandomForestClassifier()),  # Classifier
         ]
     )
-    print(pipeline.fit_transform(X_train))
+    # print(pipeline.fit_transform(X_train))
 
-    print(X_train)
+    # print(X_train)
 
-    # pipeline.fit(X_train, y_train)
-    #
-    # y_pred = pipeline.predict(X_test)
-    # print(f"Predicted: {y_pred[0]}, Actual: {y_test.values[0]}")
+    pipeline.fit(X_train, y_train)
+
+    y_pred = pipeline.predict(X_test)
+    print(f"Predicted: {y_pred[0]}, Actual: {y_test.values[0]}")
