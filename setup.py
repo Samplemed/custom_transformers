@@ -3,9 +3,9 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+_ = setuptools.setup(
     name="custom_transformers",
-    version="1.0.0",
+    version="1.1.0",
     author="Leonardo Uchôa Pedreira",
     author_email="leonardo.pedreira@samplemed.com.br",
     description="Custom Transformers",
@@ -20,5 +20,5 @@ setuptools.setup(
     package_dir={"": "src"},
     install_requires=["scikit-learn>=1.0.2", "pandas>=2.0.0"],
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.6",
+    python_requires=">=3.10",
 )
