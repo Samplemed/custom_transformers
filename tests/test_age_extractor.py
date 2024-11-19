@@ -15,7 +15,6 @@ def test_age_extractor_computation(age_data: pd.DataFrame):
     transformer.fit(age_data)
     transformed = transformer.transform(age_data)
 
-    # Check the age column is added
     assert "age" in transformed.columns
     assert transformed["age"].iloc[0] == 24  # 2000-01-01
     assert transformed["age"].iloc[1] == 34  # 1990-05-15
@@ -43,3 +42,19 @@ def test_age_extractor_missing_value(age_data: pd.DataFrame):
     transformed = transformer.transform(age_data_with_na)
 
     assert pd.isna(transformed["age"].iloc[1])
+
+
+@pytest.mark.parametrize(
+    "drop_original_cols, expected_column_presence", [(True, False), (False, True)]
+)
+def test_age_extractor_with_drop_original_column(
+    age_data: pd.DataFrame, drop_original_cols, expected_column_presence
+):
+    transformer = AgeExtractor(
+        birthdate_column="birthdate", drop_original_cols=drop_original_cols
+    )
+
+    transformer.fit(age_data)
+    transformed = transformer.transform(age_data)
+
+    assert ("birthdate" in transformed.columns) == expected_column_presence

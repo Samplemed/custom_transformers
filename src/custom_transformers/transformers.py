@@ -128,9 +128,11 @@ class AgeExtractor(BaseEstimator, TransformerMixin):
         self,
         birthdate_column: str,
         base_year: int | None = None,
+        drop_original_cols: bool = False,
     ):
         self.birthdate_column = birthdate_column
         self.base_year = base_year if base_year is not None else datetime.now().year
+        self.drop_original_cols = drop_original_cols
 
     def fit(self, X: pd.DataFrame, y=None):
         """
@@ -150,6 +152,8 @@ class AgeExtractor(BaseEstimator, TransformerMixin):
         X_copy = X.copy()
         X_copy["age"] = pd.to_datetime(X_copy[self.birthdate_column])
         X_copy["age"] = self.base_year - X_copy["age"].dt.year
+        if self.drop_original_cols:
+            X_copy.drop(self.birthdate_column, axis=1, inplace=True)
 
         return X_copy
 
@@ -196,20 +200,12 @@ if __name__ == "__main__":
             ),
             (
                 "age_extractor",
-                AgeExtractor(
-                    birthdate_column="birthday",
-                ),
-            ),
-            (
-                "feature_selector",
-                FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
+                AgeExtractor(birthdate_column="birthday", drop_original_cols=True),
             ),
             ("classifier", RandomForestClassifier()),  # Classifier
         ]
     )
-    # print(pipeline.fit_transform(X_train))
-
-    # print(X_train)
+    print(pipeline[0:1].fit_transform(X_train))
 
     pipeline.fit(X_train, y_train)
 
