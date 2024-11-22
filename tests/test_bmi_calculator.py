@@ -11,49 +11,42 @@ def example_dataframe():
     return pd.DataFrame(data)
 
 
-def test_bmi_trefethen(example_dataframe):
-    bmi_transformer_trefethen = BmiCalculator(
+@pytest.mark.parametrize(
+    "trefethen, expected_bmi",
+    [
+        (
+            True,
+            [
+                1.3 * (70 / (1.75**2.5)),
+                1.3 * (80 / (1.80**2.5)),
+                1.3 * (60 / (1.65**2.5)),
+                1.3 * (90 / (1.85**2.5)),
+                1.3 * (75 / (1.70**2.5)),
+            ],
+        ),
+        (
+            False,
+            [
+                70 / (1.75**2),
+                80 / (1.80**2),
+                60 / (1.65**2),
+                90 / (1.85**2),
+                75 / (1.70**2),
+            ],
+        ),
+    ],
+)
+def test_bmi_calculator(example_dataframe, trefethen, expected_bmi):
+    bmi_transformer = BmiCalculator(
         height_col="height",
         weight_col="weight",
         drop_original_cols=False,
-        trefethen=True,
+        trefethen=trefethen,
     )
 
-    df_transformed_trefethen = bmi_transformer_trefethen.fit_transform(
-        example_dataframe
-    )
+    df_transformed = bmi_transformer.fit_transform(example_dataframe)
 
-    expected_bmi = [
-        1.3 * (70 / (1.75**2.5)),
-        1.3 * (80 / (1.80**2.5)),
-        1.3 * (60 / (1.65**2.5)),
-        1.3 * (90 / (1.85**2.5)),
-        1.3 * (75 / (1.70**2.5)),
-    ]
-
-    for i, row in df_transformed_trefethen.iterrows():
-        assert pytest.approx(row["bmi"], rel=1e-5) == expected_bmi[i]
-
-
-def test_bmi_standard(example_dataframe):
-    bmi_transformer_standard = BmiCalculator(
-        height_col="height",
-        weight_col="weight",
-        drop_original_cols=False,
-        trefethen=False,
-    )
-
-    df_transformed_standard = bmi_transformer_standard.fit_transform(example_dataframe)
-
-    expected_bmi = [
-        70 / (1.75**2),
-        80 / (1.80**2),
-        60 / (1.65**2),
-        90 / (1.85**2),
-        75 / (1.70**2),
-    ]
-
-    for i, row in df_transformed_standard.iterrows():
+    for i, row in df_transformed.iterrows():
         assert pytest.approx(row["bmi"], rel=1e-5) == expected_bmi[i]
 
 
