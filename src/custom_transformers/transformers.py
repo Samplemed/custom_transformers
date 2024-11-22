@@ -158,6 +158,52 @@ class AgeExtractor(BaseEstimator, TransformerMixin):
         return X_copy
 
 
+class BmiCalculator(BaseEstimator, TransformerMixin):
+    """
+    Custom scikit-learn transformer calculate bmi, based on weight (kilograms)
+    and height (meters).
+    """
+
+    def __init__(
+        self,
+        height_col: str,
+        weight_col: str,
+        drop_original_cols: bool,
+        trefethen: bool = False,
+    ):
+        self.height_col = height_col
+        self.weight_col = weight_col
+        self.drop_original_cols = drop_original_cols
+        self.trefethen = trefethen
+
+    def calculate_bmi(self, pd_row) -> float:
+        if pd_row[self.height_col] == 0:
+            raise ZeroDivisionError("Height cannot be zero for BMI calculation.")
+
+        if self.trefethen:
+            return 1.3 * (pd_row["weight"] / (pd_row["height"] ** 2.5))
+        else:
+            return pd_row["weight"] / (pd_row["height"] ** 2)
+
+    def fit(self, X: pd.DataFrame, y=None):
+        """
+        fit
+        """
+        return self
+
+    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
+        """
+        transform
+        """
+        X_copy = X.copy()
+        X_copy["bmi"] = X_copy.apply(self.calculate_bmi, axis=1)
+
+        if self.drop_original_cols:
+            X_copy.drop([self.height_col, self.weight_col], axis=1, inplace=True)
+
+        return X_copy
+
+
 if __name__ == "__main__":
     import pandas as pd
     from sklearn.ensemble import RandomForestClassifier
@@ -187,6 +233,17 @@ if __name__ == "__main__":
     y_train = y.iloc[:-1]
     X_test = X.iloc[-1:]
     y_test = y.iloc[-1:]
+
+    # bmi_transformer_trefethen = BmiCalculator(
+    #     height_col="height",
+    #     weight_col="weight",
+    #     drop_original_cols=False,
+    #     trefethen=True,
+    # )
+    #
+    # df_transformed_trefethen = bmi_transformer_trefethen.fit_transform(X_train)
+    # print("Transform with Trefethen BMI formula (trefethen=True):")
+    # print(df_transformed_trefethen)
 
     pipeline = Pipeline(
         [
