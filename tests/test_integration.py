@@ -4,11 +4,16 @@ import pytest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 
-from custom_transformers.transformers import AgeExtractor, FeatureSelector, YMDExtractor
+from custom_transformers.transformers import (
+    AgeExtractor,
+    BmiCalculator,
+    FeatureSelector,
+    YMDExtractor,
+)
 
 
 @pytest.fixture
-def sample_data():
+def sample_data() -> pd.DataFrame:
     data = {
         "birthday": [
             "1981-06-24",
@@ -28,7 +33,7 @@ def sample_data():
     return X, y
 
 
-def test_pipeline_with_model(sample_data):
+def test_pipeline_with_model(sample_data: pd.DataFrame):
     X, y = sample_data
 
     X_train = X.iloc[:-1]
@@ -52,8 +57,17 @@ def test_pipeline_with_model(sample_data):
                 ),
             ),
             (
+                "bmi_calculator",
+                BmiCalculator(
+                    height_col="height",
+                    weight_col="weight",
+                    drop_original_cols=True,
+                    trefethen=False,
+                ),
+            ),
+            (
                 "feature_selector",
-                FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
+                FeatureSelector(columns=["salary", "birthday_year", "age", "bmi"]),
             ),
             ("classifier", RandomForestClassifier()),
         ]
@@ -70,7 +84,7 @@ def test_pipeline_with_model(sample_data):
     assert y_pred[0] in [0, 1]
 
 
-def test_pipeline_without_model(sample_data):
+def test_pipeline_without_model(sample_data: pd.DataFrame):
     X, y = sample_data
 
     X_train = X.iloc[:-1]
@@ -93,8 +107,17 @@ def test_pipeline_without_model(sample_data):
                 ),
             ),
             (
+                "bmi_calculator",
+                BmiCalculator(
+                    height_col="height",
+                    weight_col="weight",
+                    drop_original_cols=True,
+                    trefethen=False,
+                ),
+            ),
+            (
                 "feature_selector",
-                FeatureSelector(columns=["salary", "weight", "birthday_year", "age"]),
+                FeatureSelector(columns=["salary", "birthday_year", "age", "bmi"]),
             ),
         ]
     )
@@ -103,7 +126,16 @@ def test_pipeline_without_model(sample_data):
 
     X_transformed = pipeline.transform(X_test)
 
-    expected_columns = ["salary", "weight", "birthday_year", "age"]
+    assert "bmi" in X_transformed.columns
+
+    assert pd.api.types.is_numeric_dtype(X_transformed["bmi"])
+
+    expected_columns = [
+        "salary",
+        "birthday_year",
+        "age",
+        "bmi",
+    ]
     assert all(col in X_transformed.columns for col in expected_columns)
     assert X_transformed.shape[1] == len(expected_columns)
     assert X_transformed.shape[0] == 1
