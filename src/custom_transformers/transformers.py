@@ -158,6 +158,52 @@ class AgeExtractor(BaseEstimator, TransformerMixin):
         return X_copy
 
 
+class BmiCalculator(BaseEstimator, TransformerMixin):
+    """
+    Custom scikit-learn transformer calculate bmi, based on weight (kilograms)
+    and height (meters).
+    """
+
+    def __init__(
+        self,
+        height_col: str,
+        weight_col: str,
+        drop_original_cols: bool,
+        trefethen: bool = False,
+    ):
+        self.height_col = height_col
+        self.weight_col = weight_col
+        self.drop_original_cols = drop_original_cols
+        self.trefethen = trefethen
+
+    def calculate_bmi(self, pd_row) -> float:
+        if pd_row[self.height_col] == 0:
+            raise ZeroDivisionError("Height cannot be zero for BMI calculation.")
+
+        if self.trefethen:
+            return 1.3 * (pd_row[self.weight_col] / (pd_row[self.height_col] ** 2.5))
+        else:
+            return pd_row[self.weight_col] / (pd_row[self.height_col] ** 2)
+
+    def fit(self, X: pd.DataFrame, y=None):
+        """
+        fit
+        """
+        return self
+
+    def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
+        """
+        transform
+        """
+        X_copy = X.copy()
+        X_copy["bmi"] = X_copy.apply(self.calculate_bmi, axis=1)
+
+        if self.drop_original_cols:
+            X_copy.drop([self.height_col, self.weight_col], axis=1, inplace=True)
+
+        return X_copy
+
+
 if __name__ == "__main__":
     import pandas as pd
     from sklearn.ensemble import RandomForestClassifier
@@ -171,7 +217,6 @@ if __name__ == "__main__":
             "1981-06-24",
             "1981-06-24",
         ],
-        # "age": [25, 30, 35, 40, 45],
         "height": [5.5, 5.8, 5.7, 6.0, 5.9],
         "weight": [150, 160, 170, 180, 190],
         "salary": [50000, 60000, 70000, 80000, 90000],
@@ -195,17 +240,26 @@ if __name__ == "__main__":
                 YMDExtractor(
                     columns=["birthday"],
                     drop_original_cols=False,
-                    # ymd_to_extract=("month", "day", "year"),
                 ),
             ),
             (
                 "age_extractor",
                 AgeExtractor(birthdate_column="birthday", drop_original_cols=True),
             ),
-            ("classifier", RandomForestClassifier()),  # Classifier
+            (
+                "bmi_calculator",
+                BmiCalculator(
+                    height_col="height",
+                    weight_col="weight",
+                    drop_original_cols=True,
+                    trefethen=False,
+                ),
+            ),
+            ("classifier", RandomForestClassifier()),
         ]
     )
-    print(pipeline[0:1].fit_transform(X_train))
+
+    print(pipeline[0:3].fit_transform(X_train))
 
     pipeline.fit(X_train, y_train)
 
