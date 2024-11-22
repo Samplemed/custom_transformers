@@ -217,7 +217,6 @@ if __name__ == "__main__":
             "1981-06-24",
             "1981-06-24",
         ],
-        # "age": [25, 30, 35, 40, 45],
         "height": [5.5, 5.8, 5.7, 6.0, 5.9],
         "weight": [150, 160, 170, 180, 190],
         "salary": [50000, 60000, 70000, 80000, 90000],
@@ -234,17 +233,7 @@ if __name__ == "__main__":
     X_test = X.iloc[-1:]
     y_test = y.iloc[-1:]
 
-    # bmi_transformer_trefethen = BmiCalculator(
-    #     height_col="height",
-    #     weight_col="weight",
-    #     drop_original_cols=False,
-    #     trefethen=True,
-    # )
-    #
-    # df_transformed_trefethen = bmi_transformer_trefethen.fit_transform(X_train)
-    # print("Transform with Trefethen BMI formula (trefethen=True):")
-    # print(df_transformed_trefethen)
-
+    # Create a pipeline
     pipeline = Pipeline(
         [
             (
@@ -252,19 +241,31 @@ if __name__ == "__main__":
                 YMDExtractor(
                     columns=["birthday"],
                     drop_original_cols=False,
-                    # ymd_to_extract=("month", "day", "year"),
                 ),
             ),
             (
                 "age_extractor",
                 AgeExtractor(birthdate_column="birthday", drop_original_cols=True),
             ),
+            (
+                "bmi_calculator",
+                BmiCalculator(
+                    height_col="height",
+                    weight_col="weight",
+                    drop_original_cols=True,
+                    trefethen=False,  # Using the standard BMI formula
+                ),
+            ),
             ("classifier", RandomForestClassifier()),  # Classifier
         ]
     )
-    print(pipeline[0:1].fit_transform(X_train))
 
+    # Print the transformed data after the "year_extractor" step
+    print(pipeline[0:3].fit_transform(X_train))
+
+    # Fit the pipeline with training data
     pipeline.fit(X_train, y_train)
 
+    # Predict with the test data
     y_pred = pipeline.predict(X_test)
     print(f"Predicted: {y_pred[0]}, Actual: {y_test.values[0]}")
