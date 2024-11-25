@@ -20,6 +20,8 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
         self,
         vars_and_pipe_dict: dict[str, Pipeline],
     ):
+        if not vars_and_pipe_dict:
+            raise ValueError("The 'vars_and_pipe_dict' cannot be empty.")
         self.vars_and_pipe_dict = vars_and_pipe_dict
 
     def fit(self, x, y=None):
@@ -123,11 +125,9 @@ class JoinTransformer(BaseEstimator, TransformerMixin):
 if __name__ == "__main__":
     from sklearn import datasets, tree
 
-    # Load training data
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
 
-    # Model Training
     clf = tree.DecisionTreeClassifier()
     clf.fit(X, y)
     clf2 = tree.DecisionTreeClassifier()
