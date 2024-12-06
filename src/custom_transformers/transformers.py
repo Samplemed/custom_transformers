@@ -32,8 +32,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
     Custom scikit-learn transformer for selecting columns in specified order
     """
 
-    def __init__(self, columns: list[str]):
+    def __init__(self, columns: list[str], drop_cols: bool = False):
         self.columns = columns
+        self.drop_cols = drop_cols
 
     def fit(self, X: pd.DataFrame, y=None):
         """
@@ -45,7 +46,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         """
         transform
         """
-        return X[self.columns]
+        if self.drop_cols:
+            missing_cols = [col for col in self.columns if col not in X.columns]
+            if missing_cols:
+                raise KeyError(f"{missing_cols} not found in axis")
+
+            return X.drop(columns=self.columns)
+        else:
+            return X[self.columns]
 
 
 # TODO: optimize this to avoid copying, etc
