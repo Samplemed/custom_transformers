@@ -2,6 +2,7 @@
 Custom scikit-learn transformers.
 """
 
+from collections import Counter
 from datetime import datetime
 from typing import Literal
 
@@ -36,8 +37,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         self.columns = columns
         self.drop_cols = drop_cols
 
-        if len(self.columns) != len(set(self.columns)):
-            raise ValueError("Duplicate columns found in the columns list.")
+        column_counts = Counter(self.columns)
+        duplicates = [col for col, count in column_counts.items() if count > 1]
+
+        if duplicates:
+            raise ValueError(
+                f"Duplicate columns found in the columns list: {', '.join(duplicates)}."
+            )
 
     def fit(self, X: pd.DataFrame, y=None):
         """
