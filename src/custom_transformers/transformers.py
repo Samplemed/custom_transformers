@@ -36,6 +36,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         self.columns = columns
         self.drop_cols = drop_cols
 
+        if len(self.columns) != len(set(self.columns)):
+            raise ValueError("Duplicate columns found in the columns list.")
+
     def fit(self, X: pd.DataFrame, y=None):
         """
         fit

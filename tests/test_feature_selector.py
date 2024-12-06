@@ -80,3 +80,12 @@ def test_feature_selector_select_and_drop_conflict(sample_data: pd.DataFrame):
 
     assert list(transformed.columns) == ["C"]
     assert transformed.shape == (3, 1)
+
+
+def test_feature_selector_with_duplicate_columns(sample_data: pd.DataFrame):
+    with pytest.raises(
+        ValueError, match="Duplicate columns found in the columns list."
+    ):
+        transformer = FeatureSelector(columns=["A", "B", "A"], drop_cols=True)
+        transformer.fit(sample_data)
+        transformer.transform(sample_data)
