@@ -40,3 +40,52 @@ def test_feature_selector_no_fit(sample_data: pd.DataFrame):
 
     assert list(transformed.columns) == ["A", "B"]
     assert transformed.shape == (3, 2)
+
+
+def test_feature_selector_drop_columns(sample_data: pd.DataFrame):
+    transformer = FeatureSelector(columns=["A", "C"], drop_cols=True)
+
+    transformer.fit(sample_data)
+
+    transformed = transformer.transform(sample_data)
+
+    assert list(transformed.columns) == ["B"]
+    assert transformed.shape == (3, 1)
+
+
+def test_feature_selector_drop_non_existent_column(sample_data: pd.DataFrame):
+    transformer = FeatureSelector(columns=["Z"], drop_cols=True)
+
+    transformer.fit(sample_data)
+
+    with pytest.raises(KeyError):
+        _ = transformer.transform(sample_data)
+
+
+def test_feature_selector_drop_columns_with_invalid_column(sample_data: pd.DataFrame):
+    transformer = FeatureSelector(columns=["A", "Z"], drop_cols=True)
+
+    transformer.fit(sample_data)
+
+    with pytest.raises(KeyError):
+        _ = transformer.transform(sample_data)
+
+
+def test_feature_selector_select_and_drop_conflict(sample_data: pd.DataFrame):
+    transformer = FeatureSelector(columns=["A", "B"], drop_cols=True)
+
+    transformer.fit(sample_data)
+
+    transformed = transformer.transform(sample_data)
+
+    assert list(transformed.columns) == ["C"]
+    assert transformed.shape == (3, 1)
+
+
+def test_feature_selector_with_duplicate_columns(sample_data: pd.DataFrame):
+    with pytest.raises(
+        ValueError, match="Duplicate columns found in the columns list: A."
+    ):
+        transformer = FeatureSelector(columns=["A", "B", "A"], drop_cols=True)
+        transformer.fit(sample_data)
+        transformer.transform(sample_data)

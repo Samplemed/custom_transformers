@@ -2,6 +2,7 @@
 Custom scikit-learn transformers.
 """
 
+from collections import Counter
 from datetime import datetime
 from typing import Literal
 
@@ -32,8 +33,17 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
     Custom scikit-learn transformer for selecting columns in specified order
     """
 
-    def __init__(self, columns: list[str]):
+    def __init__(self, columns: list[str], drop_cols: bool = False):
         self.columns = columns
+        self.drop_cols = drop_cols
+
+        column_counts = Counter(self.columns)
+        duplicates = [col for col, count in column_counts.items() if count > 1]
+
+        if duplicates:
+            raise ValueError(
+                f"Duplicate columns found in the columns list: {', '.join(duplicates)}."
+            )
 
     def fit(self, X: pd.DataFrame, y=None):
         """
@@ -45,7 +55,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         """
         transform
         """
-        return X[self.columns]
+        if self.drop_cols:
+            missing_cols = [col for col in self.columns if col not in X.columns]
+            if missing_cols:
+                raise KeyError(f"{missing_cols} not found in axis")
+
+            return X.drop(columns=self.columns)
+        else:
+            return X[self.columns]
 
 
 # TODO: optimize this to avoid copying, etc
