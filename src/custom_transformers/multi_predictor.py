@@ -24,10 +24,10 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
             raise ValueError("The 'vars_and_pipe_dict' cannot be empty.")
         self.vars_and_pipe_dict = vars_and_pipe_dict
 
-    def fit(self, x, y=None):
+    def fit(self, X, y=None):
         return self
 
-    def predict(self, X) -> dict[str, list[int]]:
+    def predict(self, X: DataFrame) -> dict[str, list[int]]:
         """
         predicts
         """
@@ -41,7 +41,9 @@ class MultiPredictor(BaseEstimator, ClassifierMixin):
         return predictions_dict
 
     def predict_proba(
-        self, X, bin_classif_return_classes_idx: Optional[Literal[0, 1]] = None
+        self,
+        X: DataFrame,
+        bin_classif_return_classes_idx: Optional[Literal[0, 1]] = None,
     ) -> dict[str, list[float]]:
         """
         predicts proba
@@ -120,6 +122,77 @@ class JoinTransformer(BaseEstimator, TransformerMixin):
 
     def get_feature_names(self):
         return self.cols
+
+
+class CompositePredictor(BaseEstimator, ClassifierMixin):
+    """
+    Custom scikit-learn transformer for aggregating all combinations of
+    outer/inner predictions.
+    -----------------
+    **Inputs**:
+        - `models_dict`: dict that contains the outer as keys and
+          for each outer, another dictionary of inner as keys
+          with the associated classifier model (or pipeline).
+    **Output**:
+        Pandas DataFrame aggregation of predictions
+    """
+
+    def __init__(self, models_dict: dict):
+        if not models_dict:
+            raise ValueError("The 'models_dict' cannot be empty.")
+        self.models_dict = models_dict
+
+    def fit(self, X, y=None):
+        return self
+
+    def predict(self, X) -> dict[str, list[int]]:
+        """
+        predicts the labels for each outer/inner combination
+        """
+
+        predictions_dict = {}
+
+        for outer, inners in self.models_dict.items():
+            predictions_dict[outer] = {}
+
+            for inner, model in inners.items():
+                predictions_dict[outer][inner] = model.predict(X).ravel().tolist()
+
+        return predictions_dict
+
+    def predict_proba(
+        self, X, bin_classif_return_classes_idx: Optional[Literal[0, 1]] = None
+    ) -> dict[str, list[float]]:
+        """
+        predicts the probabilities for each outer/inner combination.
+
+        Args:
+            - `bin_classif_return_classes_idx`: mostly useful for binary classification,
+              returns either the 0 (P(X=0)) or 1 (P(X=1)) probability class or all classes.
+        """
+
+        assert (
+            bin_classif_return_classes_idx == 0
+            or bin_classif_return_classes_idx == 1
+            or bin_classif_return_classes_idx is None
+        ), f"`bin_classif_return_classes_idx` should either 0, 1 or None, not {bin_classif_return_classes_idx}"
+
+        predictions_dict = {}
+
+        for outer, inners in self.models_dict.items():
+            predictions_dict[outer] = {}
+
+            for inner, model in inners.items():
+                probas = model.predict_proba(X)
+
+                if bin_classif_return_classes_idx == 0:
+                    predictions_dict[outer][inner] = probas[:, 0].ravel().tolist()
+                elif bin_classif_return_classes_idx == 1:
+                    predictions_dict[outer][inner] = probas[:, 1].ravel().tolist()
+                else:
+                    predictions_dict[outer][inner] = probas.ravel().tolist()
+
+        return predictions_dict
 
 
 if __name__ == "__main__":
