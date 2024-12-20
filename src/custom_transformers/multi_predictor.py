@@ -197,7 +197,12 @@ class CompositePredictor(BaseEstimator, ClassifierMixin):
 
 if __name__ == "__main__":
     from sklearn import datasets, tree
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
 
+    print("\n-------------------------------------------------------------")
+    print("MultiPredictor Example")
+    print("-------------------------------------------------------------\n")
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
 
@@ -239,3 +244,29 @@ if __name__ == "__main__":
         {multi_predictor.predict(single_row)}
         """
     )
+
+    print("\n-------------------------------------------------------------")
+    print("CompositePredictor Example")
+    print("-------------------------------------------------------------\n")
+    X, y = datasets.make_classification(
+        n_samples=100, n_features=10, n_informative=5, random_state=42
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    model_1 = Pipeline([("clf", RandomForestClassifier(n_estimators=10))])
+    model_2 = Pipeline([("clf", RandomForestClassifier(n_estimators=10))])
+
+    model_1.fit(X_train, y_train)
+    model_2.fit(X_train, y_train)
+
+    models_dict = {
+        "outer_1": {"inner_1": model_1, "inner_2": model_2},
+        "outer_2": {"inner_1": model_1, "inner_2": model_2},
+    }
+
+    transformer = CompositePredictor(models_dict=models_dict)
+
+    print(__import__("pprint").pprint(transformer.predict(X_test), compact=True))
+    print(__import__("pprint").pprint(transformer.predict_proba(X_test), compact=True))
