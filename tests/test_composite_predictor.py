@@ -96,7 +96,7 @@ def test_predict_proba_values(setup_models):
     for _, inners in probas.items():
         for _, proba in inners.items():
             assert isinstance(proba, list)
-            # assert len(proba) == len(X_test)
+            assert (len(proba) / 2) == len(X_test)
             # For binary classification, the proba will be 2 values per sample (for class 0 and 1)
             # Thus, ensure it is a list of probabilities per sample
             assert all(0 <= p <= 1 for p in proba)
